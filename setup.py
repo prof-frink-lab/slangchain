@@ -9,12 +9,13 @@ HERE = pathlib.Path(__file__).parent
 # This call to setup() does all the work
 setuptools.setup(
   name="slangchain",
-  version="0.0.1",
+  version="0.0.2",
   description="Slangchain library",
   author="Eugene Tan",
   author_email="bellourchee@gmail.com",
   license="MIT",
   install_requires=[
+    'boto3',
 
     'unstructured',
     'beautifulsoup4',
