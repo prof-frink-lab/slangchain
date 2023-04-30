@@ -23,7 +23,14 @@ Run the below command in the slangchain project repository parent directory.
 pip install .
 ```
 <br><br>
+
 # Examples
+
 <br>
 
 Readme for the examples can be found [here](./docs/modules/README.md).
+
+##  BabyAGI AWS Lambda - Boilerplate Deployment
+
+<br>
+Example can be found [here](./aws/examples/serverless-baby-agi)
