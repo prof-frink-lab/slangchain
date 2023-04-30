@@ -1,0 +1,13 @@
+jsonschema
+awslambdaric
+boto3
+pandas
+nltk
+unstructured
+wikipedia
+duckdb
+faiss-cpu
+tiktoken
+openai
+duckduckgo-search
+langchain

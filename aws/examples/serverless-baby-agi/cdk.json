@@ -1,0 +1,46 @@
+{
+  "app": "python3 app.py",
+  "versionReporting": false,
+  "watch": {
+    "include": [
+      "**"
+    ],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "requirements*.txt",
+      "source.bat",
+      "**/__init__.py",
+      "python/__pycache__",
+      "tests"
+    ]
+  },
+  "context": {
+    "@aws-cdk/aws-apigateway:usagePlanKeyOrderInsensitiveId": true,
+    "@aws-cdk/core:stackRelativeExports": true,
+    "@aws-cdk/aws-rds:lowercaseDbIdentifier": true,
+    "@aws-cdk/aws-lambda:recognizeVersionProps": true,
+    "@aws-cdk/aws-cloudfront:defaultSecurityPolicyTLSv1.2_2021": true,
+    "configs": {
+      "ApplicationName": "serverless-baby-agi",
+      "dev": {
+        "EnvironmentName": "dev",
+        "Lambda": {
+          "DockerFolder": "src",
+          "FileName": "lambda_function",
+          "HandlerFn": "lambda_handler",
+          "LambdaFunctionDir": "/function",
+          "LogLevel": "INFO",
+          "MemoryMB": 512,
+          "TimeoutSeconds": 900,
+          "MaxConcurrentExecutions": 100,
+          "OpenAIAPIKey": "",
+          "OpenAIModelName": "text-davinci-003",
+          "OpenAIModelTemperature": 0,
+          "SearchResultsNum": 5,
+          "WikipediaResultsNum": 1
+        }
+      }
+    }
+  }
+}
