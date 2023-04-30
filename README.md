@@ -30,4 +30,4 @@ pip install .
 
 Readme for the examples can be found [here](./docs/modules/README.md).
 
-BabyAGI AWS Lambda - Boilerplate Deployment - Example can be found [here](./aws/examples/serverless-baby-agi)
+BabyAGI AWS Lambda Boilerplate Deployment - Example can be found [here](./aws/examples/serverless-baby-agi)
