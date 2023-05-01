@@ -4,7 +4,7 @@ import sys
 import traceback
 import re
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import Extra, Field
 
@@ -12,6 +12,7 @@ from ruminat_langchain.document_loaders.url_file import UnstructuredURLFileLoade
 
 from langchain.schema import BaseRetriever
 from langchain.chains.base import Chain
+from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.docstore.document import Document
 from langchain.embeddings.base import Embeddings
 
@@ -68,7 +69,10 @@ class UrlCompressedDocSearchChain(Chain):
     """Output keys for chain."""
     return [self.output_key]
 
-  def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
+  def _call(
+    self,
+    inputs: Dict[str, str],
+    run_manager: Optional[CallbackManagerForChainRun] = None) -> Dict[str, str]:
     """Call the internal chain."""
     try:
       # Other keys are assumed to be needed for LLM prediction
