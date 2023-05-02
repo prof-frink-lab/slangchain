@@ -9,7 +9,6 @@ from jsonschema import validate
 
 from langchain.tools import BaseTool
 from langchain.callbacks.stdout import StdOutCallbackHandler
-from langchain.callbacks.base import CallbackManager
 
 from langchain.agents import load_tools
 from langchain.docstore import InMemoryDocstore
@@ -78,13 +77,13 @@ logger.setLevel(log_level)
 EMBEDDINGS = OpenAIEmbeddings()
 
 # Instantiate callback
-callback_manager = CallbackManager([StdOutCallbackHandler()])
+callback_handler = [StdOutCallbackHandler()]
 
 # Instantiate LLM model
 llm = OpenAI(
   model_name=openai_model_name,
   temperature=llm_temperature,
-  callback_manager=callback_manager)
+  callbacks=callback_handler)
 
 # Example tools - Loading DuckDuckGo and Wikipedia. Add more tools as you please..
 tools: List[BaseTool] = load_tools(

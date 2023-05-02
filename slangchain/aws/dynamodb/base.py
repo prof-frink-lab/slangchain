@@ -15,11 +15,26 @@ from pydantic import BaseModel, Field, Extra, root_validator
 
 logger = logging.getLogger(__name__)
 
-class DDBAppLoader(BaseModel):
-  """DynamoDB Items Loader"""
+"""AWS DynamoDB classes"""
+import sys
+import logging
+import traceback
+from decimal import Decimal
+from typing import Dict, List, Optional, Union, Any
 
-  ddb_resource: ServiceResource
-  table_name: str
+from slangchain.aws.schemas import (
+  PARTITION_KEY_NAME,
+  SORT_KEY_NAME,
+  DDBPayloadList)
+from pydantic import BaseModel, Field, Extra, root_validator
+
+
+logger = logging.getLogger(__name__)
+
+class DDBAppLoader(BaseModel):
+  """AWS Secrets Environment Loader"""
+
+  table_resource: Any
   partition_key_value: str
   sort_key_value: Optional[str] = Field(default=None)
 
@@ -58,6 +73,7 @@ class DDBAppLoader(BaseModel):
 
     return self.ddb_payloads
 
+
   def load(self) -> DDBPayloadList:
     """load payloads"""
     return self()
@@ -68,23 +84,21 @@ class DDBAppLoader(BaseModel):
     return self.ddb_payloads
 
   @classmethod
-  def from_dynamodb_resource_and_table_name(
+  def from_table_resource(
     cls,
-    ddb_resource: ServiceResource,
-    table_name: str,
+    table_resource: Any,
     partition_key_value: str,
     sort_key_value: str) -> None:
-    """instantiate class by DDB resource and table name"""
+    """load DDB records from table name"""
 
     return cls(
-      ddb_resource=ddb_resource,
-      table_name=table_name,
+      table_resource=table_resource,
       partition_key_value=partition_key_value,
       sort_key_value=sort_key_value
     )
 
   def _get_items_from_ddb(self) -> DDBPayloadList:
-    """Get items from DynamoDB"""
+    """Get items from ddb"""
     items = []
     condition = f"{PARTITION_KEY_NAME} = :partition_key_value"
     expression = {
@@ -93,8 +107,8 @@ class DDBAppLoader(BaseModel):
     if self.sort_key_value:
       condition += f" AND begins_with({SORT_KEY_NAME}, :sort_key_value )"
       expression[':sort_key_value'] = self.sort_key_value
-    ddb_table = self.ddb_resource.Table(self.table_name)
-    response = ddb_table.query(
+
+    response = self.table_resource.query(
       KeyConditionExpression= condition,
       ExpressionAttributeValues=expression
     )
@@ -106,7 +120,7 @@ class DDBAppLoader(BaseModel):
 
   def _convert_decimals_to_numbers(
     self, input_obj:Union[Dict, List[Dict]]) -> Union[Dict, List[Dict]]:
-    """Replace decimals in dict"""
+    """Replace deimals in dict"""
 
     if isinstance(input_obj, list):
       for i, _ in enumerate(input_obj):
@@ -133,11 +147,10 @@ class DDBAppLoader(BaseModel):
 
 
 class DDBAppSaver(BaseModel):
-  """DynamoDB Items Saver"""
+  """AWS Secrets Environment Loader"""
 
-  ddb_resource: ServiceResource
-  table_name: str
-  ddb_payloads: Optional[DDBPayloadList] = Field(default=[])
+  table_resource: Any
+  ddb_payloads: DDBPayloadList
 
   class Config:
     """Configuration for this pydantic object."""
@@ -160,10 +173,9 @@ class DDBAppSaver(BaseModel):
 
   def __call__(self) -> None:
     try:
-      ddb_table = self.ddb_resource.Table(self.table_name)
       payloads = self.ddb_payloads.dict().get("__root__", [])
       payloads = [self._convert_number_to_decimals(i) for i in payloads]
-      with ddb_table.batch_writer() as batch:
+      with self.table_resource.batch_writer() as batch:
         for payload in payloads:
           batch.put_item(Item=payload)
     except Exception:
@@ -179,6 +191,18 @@ class DDBAppSaver(BaseModel):
     """save payloads"""
     self.ddb_payloads = ddb_payloads
     self()
+
+  @classmethod
+  def from_table_resource(
+    cls,
+    table_resource: Any,
+    ddb_payloads: DDBPayloadList) -> None:
+    """load DDB records from table name"""
+
+    return cls(
+      table_resource=table_resource,
+      ddb_payloads=ddb_payloads
+    )
 
   def _convert_number_to_decimals(
     self,
@@ -198,17 +222,3 @@ class DDBAppSaver(BaseModel):
       return Decimal(str(input_obj))
 
     return input_obj
-
-  @classmethod
-  def from_dynamodb_resource_and_table_name(
-    cls,
-    ddb_resource: ServiceResource,
-    table_name: str,
-    ddb_payloads: Optional[DDBPayloadList] = None) -> None:
-    """Create a streaming callback from a table name"""
-
-    return cls(
-      ddb_resource=ddb_resource,
-      table_name=table_name,
-      ddb_payloads=ddb_payloads
-    )

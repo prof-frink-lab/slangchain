@@ -9,5 +9,5 @@ duckdb
 faiss-cpu
 tiktoken
 openai
-duckduckgo-search
-langchain
+duckduckgo-search==2.8.6
+langchain==0.0.155

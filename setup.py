@@ -45,7 +45,7 @@ setuptools.setup(
     'gptcache',
 
     'jupyter',
-    'langchain==0.0.154'
+    'langchain==0.0.155'
   ],
   packages=setuptools.find_packages(),
   python_requires=">=3"
