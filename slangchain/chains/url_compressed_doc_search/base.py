@@ -8,8 +8,6 @@ from typing import Dict, List, Optional
 
 from pydantic import Extra, Field
 
-from ruminat_langchain.document_loaders.url_file import UnstructuredURLFileLoader
-
 from langchain.schema import BaseRetriever
 from langchain.chains.base import Chain
 from langchain.callbacks.manager import CallbackManagerForChainRun
@@ -24,6 +22,8 @@ from langchain.document_transformers import EmbeddingsRedundantFilter
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 from langchain.retrievers.document_compressors import DocumentCompressorPipeline
+
+from slangchain.document_loaders.url_file import UnstructuredURLFileLoader
 
 logger = logging.getLogger()
 
