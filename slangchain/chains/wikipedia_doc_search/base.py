@@ -1,4 +1,4 @@
-"""URL similar document chain"""
+"""Wikipedia similar document chain"""
 from __future__ import annotations
 import sys
 import traceback
