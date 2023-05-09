@@ -1,6 +1,21 @@
 # Examples
 <br>
 
+## Autonomous Agents
+
+<br>
+
+### Persistent BabyAGI
+
+[PersistentBabyAGI](../../slangchain/autonomous_agents/baby_agi.py) that is build on top of [BabyAgi](https://github.com/hwchase17/langchain/blob/master/docs/use_cases/autonomous_agents/baby_agi_with_agent.ipynb).
+
+In a nutshell, PersistentBabyAGI extends the functionality for BabyAGI, allowing you to persist the task and task results in the form of Vectorstores. You can pick up where you left off by saving/loading the task and task results Vectorstores.
+
+The notebook can be found [here](./autonomous_agents/examples/baby_agi.ipynb).
+
+<br>
+
+
 ## Chains
 
 <br>

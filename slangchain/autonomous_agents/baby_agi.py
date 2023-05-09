@@ -273,7 +273,7 @@ class PersistentBabyAGI(Chain, BaseModel):
     callbacks: Optional[Callbacks] = None,
     **kwargs: Dict[str, Any],
   ) -> "PersistentBabyAGI":
-    """Initialize the BabyAGI Controller."""
+    """Initialize the PersistentBabyAGI Controller."""
     # Instantiate Task objects
     task_creation_chain = TaskCreationChain.from_llm(llm, verbose=verbose)
     task_prioritization_chain = TaskPrioritizationChain.from_llm(
