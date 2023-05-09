@@ -15,6 +15,14 @@ The notebook can be found [here](./chains/examples/url_compressed_doc_search.ipy
 
 <br>
 
+### Wikipedia Contextual Compressions Retriever
+
+[WikipediaDocSearchChain](../../slangchain/chains/wikipedia_doc_search/base.py) loads Wikipedia pages based on a search query, and retrives the chunks of text that are most relevant to a search query.
+
+The search uses [LangChain](https://github.com/hwchase17/langchain) [WikipediaLoader](https://github.com/hwchase17/langchain/blob/master/docs/modules/indexes/document_loaders/examples/wikipedia.ipynb) to retrieve pages most relevant to the search query and [DocumentCompressorPipeline](https://github.com/hwchase17/langchain/blob/master/docs/modules/indexes/retrievers/examples/contextual-compression.ipynb) to return parts of those documents that are relevant.
+
+<br>
+
 ## Callbacks
 
 <br>

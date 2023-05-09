@@ -22,6 +22,7 @@ setuptools.setup(
     'bs4',
     'playwright',
     'selenium',
+    'lark',
 
     'huggingface-hub',
     'nltk',
@@ -40,12 +41,13 @@ setuptools.setup(
     'poppler-utils',
     'pymupdf',
     'pypdf',
+    'pytesseract',
 
     'faiss-cpu',
     'gptcache',
 
     'jupyter',
-    'langchain==0.0.155'
+    'langchain==0.0.161'
   ],
   packages=setuptools.find_packages(),
   python_requires=">=3"
