@@ -21,6 +21,8 @@ The notebook can be found [here](./chains/examples/url_compressed_doc_search.ipy
 
 The search uses [LangChain](https://github.com/hwchase17/langchain) [WikipediaLoader](https://github.com/hwchase17/langchain/blob/master/docs/modules/indexes/document_loaders/examples/wikipedia.ipynb) to retrieve pages most relevant to the search query and [DocumentCompressorPipeline](https://github.com/hwchase17/langchain/blob/master/docs/modules/indexes/retrievers/examples/contextual-compression.ipynb) to return parts of those documents that are relevant.
 
+The notebook can be found [here](./chains/examples/wikipedia_doc_search.ipynb).
+
 <br>
 
 ## Callbacks
