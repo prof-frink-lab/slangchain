@@ -15,6 +15,18 @@ The notebook can be found [here](./autonomous_agents/examples/baby_agi.ipynb).
 
 <br>
 
+### Persistent BabyAGI - Tools, Context Compression Searches and Constrained Zero Agents
+
+This notebook showcases integrating tools and agents with [PersistentBabyAGI](../../slangchain/autonomous_agents/baby_agi.py) that is build on top of [BabyAgi](https://github.com/hwchase17/langchain/blob/master/docs/use_cases/autonomous_agents/baby_agi_with_agent.ipynb). PersistentBabyAGI extends the functionality for BabyAGI, allowing you to persist the task and task results in the form of Vectorstores. You can pick up where you left off by saving/loading the task and task results Vectorstores.
+
+I added functionality to [ZeroShotAgent](https://github.com/hwchase17/langchain/blob/master/langchain/agents/mrkl/base.py) to address unexpected agent terminations when the agent's instruction narratives exceeded OpenAI's API token limit (~4000). This typically occurs during longer running actions that creates longer instructions when a larger number of tools is made available to the agent. The Open AI error occurs when the instructions attain the said limit.
+
+[ConstrainedZeroShotAgent ](../../slangchain/agents/constrained_mrkl/base.py) works around OpenAI's API token limit by removing the oldest observations from the agent scratch pad so that the instructions parsed to OpenAI's API is below the set agent_scratchpad_token_limit parameter threshold.
+
+The notebook can be found [here](./autonomous_agents/examples/baby_agi_and_constrained_agents.ipynb).
+
+<br>
+
 
 ## Chains
 
