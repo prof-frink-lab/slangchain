@@ -75,3 +75,23 @@ The notebook can be found [here](./callbacks/examples/streaming_aws_ddb.ipynb).
 [UnstructuredURLFileLoader](../../document_loaders/url_file.py) loads url web content of various types (i.e. html, pdf or json)
 
 The notebook can be found [here](./document_loaders/examples/url_file.ipynb)
+
+
+## NLP
+
+<br>
+
+### BYO Knowledge Graph Demo
+
+
+The [notebook](knowledge_graph/examples/byo_knowledge_graph.ipynb) shows the use of open source APIs to create knowledge graph and key phrase metadata for [LangChain](https://github.com/hwchase17/langchain) [Document](https://github.com/hwchase17/langchain/blob/1ff7c958b0a84b08c84eebba958b5b3fb0e6e409/langchain/schema.py#L269). 
+
+More details of the code can be found below:
+
+- [**EntityExtractor**](../../slangchain/nlp/ner/entity_extractor.py): Uses [Spacy](https://spacy.io/) to extract [named entities](https://machinelearningknowledge.ai/named-entity-recognition-ner-in-spacy-library/) in text.
+
+- [**KnowledgeGraph**](../../slangchain/nlp/ner/knowledge_graph.py): Heavily inspired by [knowledge graph generation](https://medium.com/nlplanet/building-a-knowledge-base-from-texts-a-full-practical-example-8dbbffb912fa) using HuggingFace's [Bablescape model](https://huggingface.co/Babelscape/rebel-large).
+
+- [**KeyPhraseExtractor**](../../slangchain/nlp/ner/phrase_extractor.py): Uses HuggingFace [ml6team's key phrase extractor model](https://huggingface.co/ml6team/keyphrase-extraction-distilbert-inspec) to extract important key phrases from the text.
+
+<br>
