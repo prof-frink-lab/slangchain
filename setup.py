@@ -44,10 +44,12 @@ setuptools.setup(
     'pytesseract',
 
     'faiss-cpu',
+    'chromadb',
     'gptcache',
-
+    'pinecone-client',
+  
     'jupyter',
-    'langchain==0.0.161'
+    'langchain==0.0.171'
   ],
   packages=setuptools.find_packages(),
   python_requires=">=3"
