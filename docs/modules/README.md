@@ -52,6 +52,16 @@ The notebook can be found [here](./chains/examples/wikipedia_doc_search.ipynb).
 
 <br>
 
+### URL HREF URL Retriever
+
+[UrlUrlsDocSearchChain](../../slangchain/chains/url_urls_doc_search/base.py) loads web pages, and retrives the href urls that are most relevant to a search query.
+
+The core idea is simple: given a specific query, we should be able to return only the documents relevant to that query, and only the parts of those documents that are relevant.
+
+The notebook can be found [here](./chains/examples/url_urls_doc_search.ipynb).
+
+<br>
+
 ## Callbacks
 
 <br>

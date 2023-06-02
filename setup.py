@@ -47,9 +47,9 @@ setuptools.setup(
     'chromadb',
     'gptcache',
     'pinecone-client',
-  
+
     'jupyter',
-    'langchain==0.0.171'
+    'langchain==0.0.183'
   ],
   packages=setuptools.find_packages(),
   python_requires=">=3"
