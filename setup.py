@@ -9,7 +9,7 @@ HERE = pathlib.Path(__file__).parent
 # This call to setup() does all the work
 setuptools.setup(
   name="slangchain",
-  version="0.0.2",
+  version="0.0.3",
   description="Slangchain library",
   author="Eugene Tan",
   author_email="bellourchee@gmail.com",
@@ -49,7 +49,13 @@ setuptools.setup(
     'pinecone-client',
 
     'jupyter',
-    'langchain==0.0.183'
+    'pydantic==1.10.9',
+    'langchain==0.1.11',
+    'langchain_experimental==0.0.53',
+    'langchain_googledrive==0.1.14',
+    'langchain_openai==0.0.8',
+    'langchain_anthropic==0.1.3',
+    'langgraph==0.0.19'
   ],
   packages=setuptools.find_packages(),
   python_requires=">=3"

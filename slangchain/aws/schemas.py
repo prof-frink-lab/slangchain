@@ -1,6 +1,6 @@
 """AWS Schemas"""
 from typing import Dict, List
-from pydantic import BaseModel, Extra, Field
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field
 
 META_DATA_TYPE: str = "META_DATA"
 LLM_START_TYPE: str = "LLM_START"

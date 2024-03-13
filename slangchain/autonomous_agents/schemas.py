@@ -1,6 +1,6 @@
 """SlangChain Schema"""
 from typing import List
-from pydantic import BaseModel, Extra
+from langchain_core.pydantic_v1 import BaseModel, Extra
 
 class TaskResult(BaseModel):
   """Task Result Payload"""

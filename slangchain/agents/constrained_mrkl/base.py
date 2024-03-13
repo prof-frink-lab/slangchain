@@ -15,7 +15,7 @@ from typing import (
   Union
 )
 
-from pydantic import Field, root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from slangchain.agents.constrained_mrkl.prompt import (
     FORMAT_INSTRUCTIONS, PREFIX, SUFFIX, INPUT_VARIABLES

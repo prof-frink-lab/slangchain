@@ -1,6 +1,7 @@
 """Task Prioritization chain class"""
 from typing import Optional
-from langchain import LLMChain, PromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain.chains import LLMChain
 from langchain.llms import BaseLLM
 from langchain.callbacks.manager import Callbacks
 

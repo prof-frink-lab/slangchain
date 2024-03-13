@@ -1,9 +1,10 @@
 """Google Serper search"""
 from typing import Optional
-from pydantic import Field
-from langchain.utilities import GoogleSerperAPIWrapper
+from langchain_core.pydantic_v1 import Field
 from langchain.tools.base import BaseTool
 from langchain.callbacks.manager import CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
+
+from langchain_community.utilities.google_serper import GoogleSerperAPIWrapper
 
 class GoogleResultsSearch(BaseTool):
   """Tool that has capability to query the Google Search API and get back json."""

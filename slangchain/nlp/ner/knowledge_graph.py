@@ -5,7 +5,7 @@ from transformers import (
     AutoModelForSeq2SeqLM,
     AutoTokenizer)
 from transformers.pipelines.text2text_generation import ReturnType
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 
 class KnowledgeGraph():
   """Knowledge Graph class"""

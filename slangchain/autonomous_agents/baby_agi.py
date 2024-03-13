@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Optional
 import logging
 import faiss
 
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
-from langchain.experimental.autonomous_agents.baby_agi import TaskCreationChain
-from langchain.experimental.autonomous_agents.baby_agi import TaskPrioritizationChain
+from langchain_experimental.autonomous_agents.baby_agi import TaskCreationChain
+from langchain_experimental.autonomous_agents.baby_agi import TaskPrioritizationChain
 
 from langchain.schema import Document
 from langchain.base_language import BaseLanguageModel
@@ -15,13 +15,16 @@ from langchain.callbacks.manager import Callbacks, CallbackManagerForChainRun
 from langchain.chains.base import Chain
 
 from langchain.vectorstores.base import VectorStore
-from langchain.docstore import InMemoryDocstore
+
 from langchain.vectorstores.faiss import FAISS
 
 from langchain.embeddings.base import Embeddings
-from langchain.embeddings import HuggingFaceEmbeddings
+
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.agents import AgentExecutor
+
+from langchain_community.docstore import InMemoryDocstore
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from slangchain.autonomous_agents.schemas import TaskResult, TaskResultList
 

@@ -1,6 +1,6 @@
 """NER Entity Token Classifier"""
 from typing import Dict, List, Any
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 from transformers import (
   pipeline,
   AutoTokenizer,

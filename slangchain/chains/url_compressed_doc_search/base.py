@@ -6,7 +6,7 @@ import re
 import logging
 from typing import Dict, List, Optional
 
-from pydantic import Extra, Field
+from langchain_core.pydantic_v1 import Extra, Field
 
 from langchain.schema import BaseRetriever
 from langchain.chains.base import Chain
@@ -18,10 +18,11 @@ from langchain.text_splitter import TextSplitter, RecursiveCharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 
-from langchain.document_transformers import EmbeddingsRedundantFilter
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 from langchain.retrievers.document_compressors import DocumentCompressorPipeline
+
+from langchain_community.document_transformers import EmbeddingsRedundantFilter
 
 from slangchain.document_loaders.url_file import UnstructuredURLFileLoader
 

@@ -10,7 +10,7 @@ from slangchain.aws.schemas import (
   PARTITION_KEY_NAME,
   SORT_KEY_NAME,
   DDBPayloadList)
-from pydantic import BaseModel, Field, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, Extra, root_validator
 
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ from slangchain.aws.schemas import (
   PARTITION_KEY_NAME,
   SORT_KEY_NAME,
   DDBPayloadList)
-from pydantic import BaseModel, Field, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, Extra, root_validator
 
 
 logger = logging.getLogger(__name__)

@@ -1,8 +1,5 @@
-import sys
-import os
-import logging
-
-from typing import Dict, List, Any, Optional
+"""Phrase extractor class"""
+from typing import Dict, List, Any
 
 from transformers import (
   AutoTokenizer,
@@ -11,7 +8,7 @@ from transformers import (
 
 from transformers.pipelines import AggregationStrategy
 
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import Field
 
 LABEL_KEY = "label"
 TEXT_KEY = "text"

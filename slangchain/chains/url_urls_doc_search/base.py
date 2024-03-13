@@ -6,7 +6,7 @@ import re
 import logging
 from typing import Dict, List, Optional
 
-from pydantic import Extra, Field
+from langchain_core.pydantic_v1 import Extra, Field
 
 from langchain.schema import BaseRetriever
 from langchain.chains.base import Chain

@@ -105,3 +105,10 @@ More details of the code can be found below:
 - [**KeyPhraseExtractor**](../../slangchain/nlp/ner/phrase_extractor.py): Uses HuggingFace [ml6team's key phrase extractor model](https://huggingface.co/ml6team/keyphrase-extraction-distilbert-inspec) to extract important key phrases from the text.
 
 <br>
+
+### LangGraph
+
+
+The [notebook](graphs/examples/anthropic/agent_supervisor.ipynb) is inspired by [LangChain](https://github.com/hwchase17/langchain) [Agent Supervisor](https://github.com/langchain-ai/langgraph/blob/main/examples/multi_agent/agent_supervisor.ipynb), The notebook showcases an AgentSupervisor powered by [Anthropic's Claude](https://www.anthropic.com/news/claude-3-family).
+
+<br>

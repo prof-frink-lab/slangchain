@@ -12,7 +12,7 @@ import requests
 from langchain.document_loaders.url_selenium import SeleniumURLLoader
 from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders import UnstructuredFileIOLoader
+from langchain_community.document_loaders import UnstructuredFileIOLoader
 
 logger = logging.getLogger(__file__)
 
