@@ -15,6 +15,8 @@ setuptools.setup(
   author_email="bellourchee@gmail.com",
   license="MIT",
   install_requires=[
+    'validators==0.19.0',
+
     'boto3',
 
     'unstructured',
@@ -55,7 +57,8 @@ setuptools.setup(
     'langchain_googledrive==0.1.14',
     'langchain_openai==0.0.8',
     'langchain_anthropic==0.1.3',
-    'langgraph==0.0.19'
+    'langgraph==0.0.19',
+    'langchainhub==0.1.15'
   ],
   packages=setuptools.find_packages(),
   python_requires=">=3"

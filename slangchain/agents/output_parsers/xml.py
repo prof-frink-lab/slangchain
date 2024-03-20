@@ -57,11 +57,11 @@ class XMLAgentOutputParser(AgentOutputParser):
         try:
           _tool_input = json.loads(_tool_input.replace("'", '"'))
         except JSONDecodeError:
-          logger.error("JSONDecodeError: _tool_input is not a dict: %s", _tool_input)
+          logger.error("JSONDecodeError: 1. _tool_input is not a dict: %s", _tool_input)
           try:
             _tool_input = json.loads('{'  + _tool_input.replace("'", '"') + '}')
           except JSONDecodeError:
-            logger.error("JSONDecodeError: _tool_input is not a dict: %s", _tool_input)
+            logger.error("JSONDecodeError: 2. _tool_input is not a dict: %s", _tool_input)
 
 
         if not _tool_input:

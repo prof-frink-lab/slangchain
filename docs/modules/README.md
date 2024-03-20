@@ -112,3 +112,13 @@ More details of the code can be found below:
 The [notebook](graphs/examples/anthropic/agent_supervisor.ipynb) is inspired by [LangChain](https://github.com/hwchase17/langchain) [Agent Supervisor](https://github.com/langchain-ai/langgraph/blob/main/examples/multi_agent/agent_supervisor.ipynb), The notebook showcases an AgentSupervisor powered by [Anthropic's Claude](https://www.anthropic.com/news/claude-3-family).
 
 <br>
+
+### Web Browser Navigator
+
+Inspired by [Richard He's](https://twitter.com/RealRichomie) [repository](https://github.com/richardyc/Chrome-GPT/blob/main/README.md), this [notebook](tools/examples/anthropic/selenium.ipynb) presents a demonstration of web browser navigation ([SeleniumWrapper](../../../../../slangchain/slangchain/tools/selenium/tool.py)) powered by [Anthropic](https://www.anthropic.com/) [Claude](https://www.anthropic.com/claude), showcasing the integration of natural language processing and computer vision with web browsing functionality. By leveraging Claude's capabilities, users can interact with the browser using conversational commands.
+
+<br>
+
+### ReCaptcha Solver
+
+This notebook presents a demonstration of a ReCaptcha solver ([GoogleRecaptchaWrapper](../../../../../slangchain/slangchain/tools/selenium/tool.py)) powered by Mutlimodal LLMs, showcasing the integration of natural language processing and computer vision with web browsing functionality.
