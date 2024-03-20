@@ -121,4 +121,4 @@ Inspired by [Richard He's](https://twitter.com/RealRichomie) [repository](https:
 
 ### ReCaptcha Solver
 
-This notebook presents a demonstration of a ReCaptcha solver ([GoogleRecaptchaWrapper](../../../../../slangchain/slangchain/tools/selenium/tool.py)) powered by Mutlimodal LLMs, showcasing the integration of natural language processing and computer vision with web browsing functionality.
+This [notebook](tools/examples/selenium_recaptcha.ipynb) presents a demonstration of a ReCaptcha solver ([GoogleRecaptchaWrapper](../../../../../slangchain/slangchain/tools/selenium/tool.py)) powered by Mutlimodal LLMs, showcasing the integration of natural language processing and computer vision with web browsing functionality.

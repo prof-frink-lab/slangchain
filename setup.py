@@ -9,7 +9,7 @@ HERE = pathlib.Path(__file__).parent
 # This call to setup() does all the work
 setuptools.setup(
   name="slangchain",
-  version="0.0.3",
+  version="0.0.4",
   description="Slangchain library",
   author="Eugene Tan",
   author_email="bellourchee@gmail.com",
