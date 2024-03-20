@@ -115,24 +115,10 @@ The [notebook](graphs/examples/anthropic/agent_supervisor.ipynb) is inspired by 
 
 ### Web Browser Navigator
 
-Inspired by [Richard He's](https://twitter.com/RealRichomie) [repository](https://github.com/richardyc/Chrome-GPT/blob/main/README.md), this [notebook](tools/examples/anthropic/selenium.ipynb) presents a demonstration of web browser navigation ([SeleniumWrapper](../../../../../slangchain/slangchain/tools/selenium/tool.py)) powered by [Anthropic](https://www.anthropic.com/) [Claude](https://www.anthropic.com/claude), showcasing the integration of natural language processing and computer vision with web browsing functionality. By leveraging Claude's capabilities, users can interact with the browser using conversational commands.
-
-<video 
-    width="640"
-    height="400"
-    controls>
-    <source src="https://github.com/prof-frink-lab/slangchain/raw/main/docs/modules/tools/examples/anthropic/media/selenium.mp4" type="video/mp4"/>
-</video>
+Inspired by [Richard He's](https://twitter.com/RealRichomie) [repository](https://github.com/richardyc/Chrome-GPT/blob/main/README.md), this [notebook](tools/examples/anthropic/selenium.ipynb) presents a demonstration of web browser navigation ([SeleniumWrapper](../../slangchain/tools/selenium/tool.py)) powered by [Anthropic](https://www.anthropic.com/) [Claude](https://www.anthropic.com/claude), showcasing the integration of natural language processing and computer vision with web browsing functionality. By leveraging Claude's capabilities, users can interact with the browser using conversational commands.
 
 <br>
 
 ### ReCaptcha Solver
 
-This [notebook](tools/examples/selenium_recaptcha.ipynb) presents a demonstration of a ReCaptcha solver ([GoogleRecaptchaWrapper](../../../../../slangchain/slangchain/tools/selenium/tool.py)) powered by Mutlimodal LLMs, showcasing the integration of natural language processing and computer vision with web browsing functionality.
-
-<video 
-    width="640"
-    height="400"
-    controls>
-    <source src="https://github.com/prof-frink-lab/slangchain/raw/main/docs/modules/tools/examples/media/selenium_recaptcha.mp4" type="video/mp4"/>
-</video>
+This [notebook](tools/examples/selenium_recaptcha.ipynb) presents a demonstration of a ReCaptcha solver ([GoogleRecaptchaWrapper](../../slangchain/tools/selenium/tool.py)) powered by Mutlimodal LLMs, showcasing the integration of natural language processing and computer vision with web browsing functionality.
