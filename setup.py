@@ -57,9 +57,10 @@ setuptools.setup(
     'langchain_googledrive==0.1.14',
     'langchain_openai==0.0.8',
     'langchain_anthropic==0.1.3',
-    'langgraph==0.0.19',
+    'langgraph==0.0.24',
     'langchainhub==0.1.15'
   ],
   packages=setuptools.find_packages(),
+  package_data={'': ['mark_page.js']},
   python_requires=">=3"
 )

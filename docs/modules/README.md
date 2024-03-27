@@ -122,3 +122,9 @@ Inspired by [Richard He's](https://twitter.com/RealRichomie) [repository](https:
 ### ReCaptcha Solver
 
 This [notebook](tools/examples/selenium_recaptcha.ipynb) presents a demonstration of a ReCaptcha solver ([GoogleRecaptchaWrapper](../../slangchain/tools/selenium/tool.py)) powered by Mutlimodal LLMs, showcasing the integration of natural language processing and computer vision with web browsing functionality.
+
+### Web Voyager
+
+Inspired by [LangChain](https://github.com/hwchase17/langchain) [Web Voyager](https://github.com/langchain-ai/langgraph/blob/main/examples/web-navigation/web_voyager.ipynb), the [notebook](graphs/examples/anthropic/web_voyager.ipynb) showcases a [LangGraph](https://github.com/langchain-ai/langgraph/tree/main) based [WebVoyager](../../slangchain/graphs/anthropic/web_voyager.py) powered by [Anthropic's Claude](https://www.anthropic.com/news/claude-3-family).
+
+[WebVoyager](https://arxiv.org/abs/2401.13919) by He, et. al., is a vision-enabled web-browsing agent capable of controlling the mouse and keyboard.

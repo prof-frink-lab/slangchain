@@ -36,14 +36,24 @@ from slangchain.agents.output_parsers.chat_anthropic_functions import (
 )
 from slangchain.graphs.anthropic.schemas import (
   NodeTool,
-  AgentState
+  AgentSupervisorAgentState as AgentState
 )
-from slangchain.graphs.anthropic.prompt import (
-  NEXT,
-  FINISH,
-  SUPERVISOR,
-  SUPERVISOR_SYSTEM_PROMPT
+
+
+NEXT = "next"
+FINISH = "FINISH"
+SUPERVISOR = "supervisor"
+SUPERVISOR_SYSTEM_PROMPT = (
+    "You are a supervisor tasked with managing a conversation between the"
+    " following workers: {members}. Given the following user request,"
+    " respond with the worker to act next. Each worker will perform a"
+    " task and respond with their results and status."
+    " Be very economical and use the minimum workers to achieve your task."
+    " When finished, respond with FINISH."
+    "Given the conversation below, who should act next?"
+    " Or should we FINISH? Select one of: {options}"
 )
+
 
 logger = logging.getLogger(__name__)
 
