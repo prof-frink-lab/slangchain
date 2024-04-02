@@ -6,6 +6,9 @@ import faiss
 
 from langchain_core.pydantic_v1 import BaseModel, Field
 
+from langchain_community.docstore import InMemoryDocstore
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
 from langchain_experimental.autonomous_agents.baby_agi import TaskCreationChain
 from langchain_experimental.autonomous_agents.baby_agi import TaskPrioritizationChain
 
@@ -23,8 +26,7 @@ from langchain.embeddings.base import Embeddings
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.agents import AgentExecutor
 
-from langchain_community.docstore import InMemoryDocstore
-from langchain_community.embeddings import HuggingFaceEmbeddings
+
 
 from slangchain.autonomous_agents.schemas import TaskResult, TaskResultList
 

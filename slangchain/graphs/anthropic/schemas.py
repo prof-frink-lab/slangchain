@@ -1,15 +1,17 @@
 """Schemas"""
 from typing import (
-  Annotated, List, Sequence, TypedDict, Optional
+  Annotated, List, Sequence, TypedDict, Optional, Union
 )
 import operator
 
 from playwright.async_api import Page
 
-from langchain.tools.base import BaseTool
 from langchain_core.messages import BaseMessage
+from langchain.tools.base import (
+  BaseTool, StructuredTool
+)
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 
 
 class NodeTool(BaseModel):
@@ -26,7 +28,7 @@ class NodeTool(BaseModel):
   @classmethod
   def from_objs(
     cls,
-    tool: BaseTool,
+    tool: Union[BaseTool, StructuredTool],
     name: str,
     description: str):
     """from_objs"""
@@ -46,6 +48,7 @@ class AgentSupervisorAgentState(TypedDict):
 
 
 class BBox(TypedDict):
+  """BBox"""
   x: float
   y: float
   text: str
@@ -54,6 +57,7 @@ class BBox(TypedDict):
 
 
 class Prediction(TypedDict):
+  """Prediction"""
   action: str
   args: Optional[List[str]]
 
@@ -68,3 +72,32 @@ class WebNavigationAgentState(TypedDict):
   # A system message (or messages) containing the intermediate steps
   scratchpad: List[BaseMessage]
   observation: str  # The most recent response from a tool
+
+
+class CollaboratorAgentState(TypedDict):
+  """CollaboratorAgentState"""
+  messages: Annotated[Sequence[BaseMessage], operator.add]
+  sender: str
+
+
+class CollaboratorNodeTool(NodeTool):
+  """CollaboratorNodeTool"""
+  entrypoint_flag: Optional[bool] = Field(default = False)
+  conditional_edge_node: Optional[str] = Field(default = None)
+
+  @classmethod
+  def from_objs(
+    cls,
+    tool: Union[BaseTool, StructuredTool],
+    name: str,
+    description: str,
+    entrypoint_flag: Optional[bool] = False,
+    conditional_edge_node: Optional[str] = None):
+    """from_objs"""
+    return cls(
+      tool = tool,
+      name = name,
+      description = description,
+      entrypoint_flag = entrypoint_flag,
+      conditional_edge_node = conditional_edge_node
+    )

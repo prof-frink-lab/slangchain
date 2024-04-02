@@ -2,17 +2,6 @@
 from typing import Dict, Sequence, List, Optional, Any
 import logging
 import functools
-import copy 
-
-from langchain.callbacks.manager import (
-  Callbacks
-)
-from langchain.agents import AgentExecutor
-
-from langchain.chains.base import Chain
-from langchain.tools.base import BaseTool
-from langgraph.pregel import Pregel
-from langgraph.graph import StateGraph, END
 
 from langchain_core.runnables.config import (
   RunnableConfig
@@ -22,6 +11,15 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.callbacks import CallbackManagerForChainRun
+
+from langchain.callbacks.manager import (
+  Callbacks
+)
+from langchain.agents import AgentExecutor
+from langchain.chains.base import Chain
+from langchain.tools.base import BaseTool
+from langgraph.pregel import Pregel
+from langgraph.graph import StateGraph, END
 
 from slangchain.llms.chat_anthropic_functions import ChatAnthropicFunctions
 
@@ -65,7 +63,6 @@ def agent_node(state, agent, name):
 class AgentSupervisor(Chain):
   """AgentSupervisor"""
   llm: ChatAnthropicFunctions
-  tools: Sequence[BaseTool]
   max_iterations: Optional[int] = Field(default = 15)
   return_intermediate_steps: bool = Field(default = False)
   early_stopping_method: Optional[str] = Field(default = "generate")
@@ -91,9 +88,9 @@ class AgentSupervisor(Chain):
     """Validate that chains are all single input/output."""
     if not isinstance(values["llm"], ChatAnthropicFunctions):
       raise TypeError("llm must be of instance ChatAnthropicFunctions")
-    if not values["tools"]:
-      return ValueError("tools list empty")
-    if not all(isinstance(tool, BaseTool) for tool in values["tools"]):
+    if not values["node_tools"]:
+      return ValueError("node_tools list empty")
+    if not all(isinstance(node_tool, NodeTool) for node_tool in values["node_tools"]):
       raise TypeError("tools all must be of BaseTool type")
     return values
 
@@ -260,8 +257,8 @@ class AgentSupervisor(Chain):
     run_manager: Optional[CallbackManagerForChainRun] = None,
   ) -> Dict[str, Any]:
 
-    _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
     message = inputs[self.input_key]
+    self.workflow = StateGraph(AgentState)
     self.init_workflow_nodes()
     self.compile_graph()
     config = RunnableConfig(recursion_limit = self.recursion_limit)
@@ -293,7 +290,7 @@ class AgentSupervisor(Chain):
   def from_llm_and_tools(
     cls,
     llm: ChatAnthropicFunctions,
-    tools: Sequence[BaseTool],
+    node_tools: Sequence[NodeTool],
     max_iterations: Optional[int] = 15,
     return_intermediate_steps: Optional[bool] = False,
     early_stopping_method: Optional[str] = "generate",
@@ -303,23 +300,13 @@ class AgentSupervisor(Chain):
   ) -> "AgentSupervisor":
     """Construct an AgentSupervisor from an LLM and tools."""
 
-    if not isinstance(llm, ChatAnthropicFunctions):
-      raise ValueError("Only supported with ChatAnthropicFunctions models.")
-
-    node_tools = [ NodeTool.from_objs(
-      tool = tool, name = tool.name, description = tool.description) for tool in tools ]
-
-    workflow = StateGraph(AgentState)
-
     return cls(
       llm = llm,
-      tools = tools,
       recursion_limit = recursion_limit,
       max_iterations = max_iterations,
       return_intermediate_steps = return_intermediate_steps,
       early_stopping_method = early_stopping_method,
       node_tools = node_tools,
-      workflow = workflow,
       callbacks = callbacks,
       verbosity = verbosity,
     )

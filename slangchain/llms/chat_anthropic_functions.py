@@ -14,16 +14,10 @@ from typing import (
 )
 import logging
 
-from langchain.callbacks.manager import (
-  CallbackManagerForLLMRun,
-)
-from langchain.schema import (
-  ChatGeneration,
-  ChatResult,
-)
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
   BaseMessage,
+  HumanMessage,
   AIMessage,
   SystemMessage
 )
@@ -33,13 +27,22 @@ from langchain_experimental.pydantic_v1 import root_validator
 
 from langchain_anthropic import ChatAnthropic
 
+from langchain.callbacks.manager import (
+  CallbackManagerForLLMRun,
+)
+from langchain.schema import (
+  ChatGeneration,
+  ChatResult,
+)
+
+
 logger = logging.getLogger(__name__)
 
 SYSTEM_FUNCTIONS_PROMPT = """In addition to responding, you must only use the following tools. \
 
 {tools}
 
-In order to use a tool, you can use <tool></tool> to specify the name, \
+In order to use a tool, you must use <tool></tool> to specify the name, \
 and the <tool_input></tool_input> tags to specify the parameters. \
 Each parameter should be passed in as <$param_name>$value</$param_name>, \
 Where $param_name is the name of the specific parameter, and $value \
@@ -87,11 +90,13 @@ class TagParser(HTMLParser):
     self.depth = 0
     self.data: Optional[str] = None
 
+
   def handle_starttag(self, tag: str, attrs: Any) -> None:
     """Hook when a new tag is encountered."""
     self.depth += 1
     self.stack.append(defaultdict(list))
     self.data = None
+
 
   def handle_endtag(self, tag: str) -> None:
     """Hook when a tag is closed."""
@@ -109,6 +114,7 @@ class TagParser(HTMLParser):
     # don't confuse an outer end tag for belonging to a leaf node.
     self.data = None
 
+
   def handle_data(self, data: str) -> None:
     """Hook when handling data."""
     stripped_data = data.strip()
@@ -121,6 +127,7 @@ class TagParser(HTMLParser):
 
 
 def _destrip(tool_input: Any) -> Any:
+  """de-strip Dict"""
   if isinstance(tool_input, dict):
     return {k: _destrip(v) for k, v in tool_input.items()}
   elif isinstance(tool_input, list):
@@ -143,6 +150,7 @@ class ChatAnthropicFunctions(BaseChatModel):
 
   @root_validator(pre=True)
   def validate_environment(cls, values: Dict) -> Dict:
+    """validate environment"""
     values["llm"] = values.get("llm") or ChatAnthropic(**values)
     return values
 
@@ -160,6 +168,8 @@ class ChatAnthropicFunctions(BaseChatModel):
   ) -> ChatResult:
     forced = False
     function_call = ""
+    logger.debug("============= _generate ==============")
+    logger.debug("kwargs: %s\n", kwargs)
     if "functions" in kwargs:
       # get the function call method
       if "function_call" in kwargs:
@@ -171,6 +181,7 @@ class ChatAnthropicFunctions(BaseChatModel):
       # should function calling be used
       if function_call != "none":
         content = SYSTEM_FUNCTIONS_PROMPT.format(tools=json.dumps(kwargs["functions"], indent=2))
+
         for message in messages:
           if isinstance(message, SystemMessage):
             if content not in message.content:
@@ -194,17 +205,18 @@ class ChatAnthropicFunctions(BaseChatModel):
           "if `function_call` provided, `functions` must also be"
         )
 
-    messages_str = '\n'.join([
-      message.type.upper() +":"+ message.content + "\n" \
-        for message in messages])
-    logger.debug("messages: \n %s", messages_str)
+    messages = self._format_messages(messages)
 
+    logger.debug("formatted last message: \n %s", json.dumps(messages[-1].dict(), indent=2))
+    response = None
     try:
       response = self.model.invoke(
         input = messages,
         stop = stop,
         config=RunnableConfig(callbacks=run_manager),
         **kwargs)
+
+      logger.debug("response: %s\n", json.dumps(response.dict(), indent=2))
 
       completion = cast(str, response.content)
       if forced:
@@ -225,12 +237,14 @@ class ChatAnthropicFunctions(BaseChatModel):
           }
         }
         message = AIMessage(content="function_call", additional_kwargs=kwargs)
-        return ChatResult(generations=[ChatGeneration(message=message)])
+
       elif "<tool>" in completion:
+        logger.debug("***tool in completion***")
         tag_parser = TagParser()
         tag_parser.feed(completion.strip() + "</tool_input>")
         msg = completion.split("<tool>")[0].strip()
         v1 = tag_parser.parse_data["tool_input"][0]
+        logger.debug("v1: %s", v1)
         kwargs = {
           "function_call": {
             "name": tag_parser.parse_data["tool"][0],
@@ -240,10 +254,11 @@ class ChatAnthropicFunctions(BaseChatModel):
         if not msg:
           msg = "function_call"
         message = AIMessage(content=msg, additional_kwargs=kwargs)
-        return ChatResult(generations=[ChatGeneration(message=message)])
       else:
         response.content = cast(str, response.content).strip()
-        return ChatResult(generations=[ChatGeneration(message=response)])
+        if not response.content:
+          raise ValueError("response is empty or null")
+        message = response
     except Exception:
       ex_type, ex_value, ex_traceback = sys.exc_info()
       filename = ex_traceback.tb_frame.f_code.co_filename
@@ -251,9 +266,61 @@ class ChatAnthropicFunctions(BaseChatModel):
       logger.error(
         "Exception - Type: %s, Exception: %s, Traceback: %s, File: %s, Line: %d", \
         ex_type, ex_value, ex_traceback, filename, line_number)
-      return ChatResult(generations=[
-        ChatGeneration(message=AIMessage(
-          content=f"{ex_type}: {ex_value}, {ex_traceback}, {filename}, {line_number}"))])
+      logger.error("=============================\n")
+      logger.error(
+        "error messages: \n %s",
+        json.dumps(messages[-1].dict(), indent=2))
+      logger.error("error response: %s", response)
+      logger.error("=============================\n")
+      traceback.print_exc()
+      message = AIMessage(
+        content= (
+          f"Exception - Type: {ex_type}, Exception: {ex_value},"
+          f" Traceback: {ex_traceback}, File: {filename}, Line: {line_number}"))
+
+    logger.debug("response message: %s | %s\n", message.type, message)
+
+    return ChatResult(generations=[ChatGeneration(message=message)])
+
+
+
+  # HACK - this method recreates alternating message types required by Claude API.
+  # https://docs.anthropic.com/claude/reference/migrating-from-text-completions-to-messages#:~:text=%F0%9F%92%A1-,Role%20names,-The%20Text%20Completions
+  def _format_messages(self, messages: List[BaseMessage]) -> List[BaseMessage]:
+    """format messages"""
+
+    formatted_messages: List[BaseMessage] = []
+
+    previous_message = None
+
+    for message in messages:
+      if previous_message is None or isinstance(message, SystemMessage):
+        formatted_messages.append(message)
+        previous_message = message
+        continue
+
+      current_message = None
+
+      if isinstance(message, type(previous_message)):
+
+        if isinstance(message, AIMessage):
+          current_message = HumanMessage(
+            content = message.content,
+            additional_kwargs = message.additional_kwargs)
+        elif isinstance(message, HumanMessage):
+          current_message = AIMessage(
+            content = message.content,
+            additional_kwargs = message.additional_kwargs)
+        if current_message:
+          formatted_messages.append(current_message)
+      else:
+        current_message = message
+        formatted_messages.append(current_message)
+
+      previous_message = current_message
+
+    return formatted_messages
+
 
   @property
   def _llm_type(self) -> str:

@@ -16,12 +16,11 @@ from typing import (
 )
 
 from langchain_core.pydantic_v1 import Field, root_validator
+from transformers import GPT2TokenizerFast
 
 from slangchain.agents.constrained_mrkl.prompt import (
     FORMAT_INSTRUCTIONS, PREFIX, SUFFIX, INPUT_VARIABLES
 )
-
-from transformers import GPT2TokenizerFast
 
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.few_shot import FewShotPromptTemplate

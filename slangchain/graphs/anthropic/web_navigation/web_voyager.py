@@ -12,7 +12,7 @@ from playwright.async_api import Page
 
 from playwright.async_api import async_playwright
 
-from slangchain.graphs.anthropic.schemas import WebNavigationAgentState as AgentState
+
 
 from langchain_core.messages import (
   HumanMessage,
@@ -29,18 +29,19 @@ from langchain_core.prompts import (
 )
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.runnables import chain as chain_decorator
-from langchain_core.runnables.config import RunnableConfig
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.runnables import Runnable, RunnablePassthrough, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 
-from langchain.chains.base import Chain
-
 from langchain_anthropic import ChatAnthropic
+
+from langchain.chains.base import Chain
 
 from langgraph.graph import StateGraph, END
 from langgraph.pregel import Pregel
+
+from slangchain.graphs.anthropic.schemas import WebNavigationAgentState as AgentState
 
 SYSTEM_MESSAGE: str = (
   "Imagine you are a robot browsing the web, just like humans. Now you need to complete a task."
@@ -113,14 +114,14 @@ async def mark_page(page: Page):
   current_dir = os.path.dirname(os.path.abspath(__file__))
   js_file_path = os.path.join(current_dir, "mark_page.js")
 
-  with open(js_file_path) as f:
+  with open(js_file_path, encoding = "utf-8") as f:
     mark_page_script = f.read()
   await page.evaluate(mark_page_script)
   for _ in range(10):
     try:
       bboxes = await page.evaluate("markPage()")
       break
-    except:
+    except Exception:
       # May be loading...
       asyncio.sleep(3)
   screenshot = await page.screenshot()
@@ -308,7 +309,7 @@ class WebVoyager(Chain):
     bbox_id = int(bbox_id)
     try:
       bbox = state["bboxes"][bbox_id]
-    except:
+    except Exception:
       return f"Error: no bbox for : {bbox_id}"
     x, y = bbox["x"], bbox["y"]
     res = await page.mouse.click(x, y)
@@ -440,7 +441,7 @@ class WebVoyager(Chain):
   def _update_scratchpad(self, state: AgentState):
     """After a tool is invoked, we want to update
     the scratchpad so the agent is aware of its previous steps"""
-  
+
     old = state.get("scratchpad")
     if old:
       txt = old[0].content

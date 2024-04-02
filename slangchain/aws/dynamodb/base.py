@@ -3,23 +3,6 @@ import sys
 import logging
 import traceback
 from decimal import Decimal
-from typing import Dict, List, Optional, Union
-from boto3.resources.factory import ServiceResource
-
-from slangchain.aws.schemas import (
-  PARTITION_KEY_NAME,
-  SORT_KEY_NAME,
-  DDBPayloadList)
-from langchain_core.pydantic_v1 import BaseModel, Field, Extra, root_validator
-
-
-logger = logging.getLogger(__name__)
-
-"""AWS DynamoDB classes"""
-import sys
-import logging
-import traceback
-from decimal import Decimal
 from typing import Dict, List, Optional, Union, Any
 
 from slangchain.aws.schemas import (
