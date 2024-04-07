@@ -52,11 +52,11 @@ setuptools.setup(
 
     'jupyter',
     'pydantic==1.10.9',
-    'langchain==0.1.11',
+    'langchain==0.1.14',
     'langchain_experimental==0.0.53',
     'langchain_googledrive==0.1.14',
     'langchain_openai==0.0.8',
-    'langchain_anthropic==0.1.3',
+    'langchain_anthropic==0.1.6',
     'langgraph==0.0.24',
     'langchainhub==0.1.15'
   ],

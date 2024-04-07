@@ -1,42 +1,42 @@
 """Agent Supervisor class"""
-from typing import Dict, Sequence, List, Optional, Any
+from typing import (
+  Dict, Sequence, List, Optional, Any
+)
 import logging
 import functools
 
-from langchain_core.runnables.config import (
-  RunnableConfig
-)
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.callbacks import CallbackManagerForChainRun
 
+from langchain_anthropic.output_parsers import ToolsOutputParser
+
+from langchain.tools import BaseTool
+
 from langchain.callbacks.manager import (
-  Callbacks
+  Callbacks,
+  CallbackManagerForToolRun
 )
 from langchain.agents import AgentExecutor
 from langchain.chains.base import Chain
-from langchain.tools.base import BaseTool
+
 from langgraph.pregel import Pregel
 from langgraph.graph import StateGraph, END
 
-from slangchain.llms.chat_anthropic_functions import ChatAnthropicFunctions
+from slangchain.llms.chat_anthropic_tools import ChatAnthropicTools
 
 from slangchain.agents.format_scratchpad.chat_anthropic_functions import (
     format_to_anthropic_function_messages,
-)
-from slangchain.tools.render import format_tool_to_anthropic_function
-
-from slangchain.agents.output_parsers.chat_anthropic_functions import (
-  ChatAnthropicFunctionsAgentOutputParser,
-  JsonOutputFunctionsParser
 )
 from slangchain.graphs.anthropic.schemas import (
   NodeTool,
   AgentSupervisorAgentState as AgentState
 )
-
+from slangchain.agents.output_parsers.chat_anthropic_tools import (
+  ChatAnthropicToolsAgentOutputParser
+)
 
 NEXT = "next"
 FINISH = "FINISH"
@@ -50,6 +50,7 @@ SUPERVISOR_SYSTEM_PROMPT = (
     " When finished, respond with FINISH."
     "Given the conversation below, who should act next?"
     " Or should we FINISH? Select one of: {options}"
+    " by executing the tool"
 )
 
 
@@ -60,9 +61,40 @@ def agent_node(state, agent, name):
   result = agent.invoke(state)
   return {"messages": [AIMessage(content=result["output"], name=name)]}
 
+
+class RouteSchema(BaseModel):
+  """RouteSchema"""
+  next: str
+
+  @classmethod
+  def from_next_values(cls, next_values: List[str]):
+    """Set the enum for the next field based on the provided values"""
+    cls.__fields__["next"].field_info.extra["enum"] = next_values
+    return cls(next=next_values[0])
+
+
+class RouteTool(BaseTool):
+  """RouteTool"""
+  name = "route"
+  description = "Select the next role."
+  args_schema = RouteSchema
+
+  def __init__(self, options: List[str], **kwargs):
+    super().__init__(**kwargs)
+    RouteSchema.from_next_values(options)  # Set enum for next field
+    self.args_schema = RouteSchema
+
+  def _run(
+    self,
+    next: str,
+    run_manager: Optional[CallbackManagerForToolRun] = None) -> dict:
+    """Implement the functionality of the tool here"""
+    return { "next": next }
+
+
 class AgentSupervisor(Chain):
   """AgentSupervisor"""
-  llm: ChatAnthropicFunctions
+  model_name: str
   max_iterations: Optional[int] = Field(default = 15)
   return_intermediate_steps: bool = Field(default = False)
   early_stopping_method: Optional[str] = Field(default = "generate")
@@ -86,8 +118,8 @@ class AgentSupervisor(Chain):
   @root_validator()
   def validate_class_objects(cls, values: Dict) -> Dict:
     """Validate that chains are all single input/output."""
-    if not isinstance(values["llm"], ChatAnthropicFunctions):
-      raise TypeError("llm must be of instance ChatAnthropicFunctions")
+    if "claude-3" not in values["model_name"]:
+      raise TypeError("model_name must start with claude-3")
     if not values["node_tools"]:
       return ValueError("node_tools list empty")
     if not all(isinstance(node_tool, NodeTool) for node_tool in values["node_tools"]):
@@ -111,23 +143,19 @@ class AgentSupervisor(Chain):
     return [self.output_key]
 
 
-  def _create_functions_agent(
+  def _create_tools_agent(
     self,
-    llm: ChatAnthropicFunctions,
+    llm: ChatAnthropicTools,
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate
   ) -> Runnable:
-    """Create an agent that uses OpenAI tools. 
+    """Create an agent that uses Anthropic tools. 
     """
     missing_vars = {"agent_scratchpad"}.difference(prompt.input_variables)
     if missing_vars:
       raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
-    llm_with_fns = llm.bind(
-      functions = [ format_tool_to_anthropic_function(tool) for tool in tools ],
-      # function_call = { "name": tools[0].name }
-      function_call = tools[0].name
-    )
+    llm.bind_tools(tools = tools)
 
     agent = (
       RunnablePassthrough.assign(
@@ -136,15 +164,16 @@ class AgentSupervisor(Chain):
         )
       )
       | prompt
-      | llm_with_fns
-      | ChatAnthropicFunctionsAgentOutputParser()
+      | llm
+      | ChatAnthropicToolsAgentOutputParser(latest_message_only = True)
     )
+
     return agent
 
 
-  def _create_tools_agent(
+  def _create_tools_agent_executor(
     self,
-    llm: ChatAnthropicFunctions,
+    model_name: str,
     tools: list,
     system_prompt: str
   ) -> AgentExecutor:
@@ -160,7 +189,8 @@ class AgentSupervisor(Chain):
       ]
     )
 
-    agent = self._create_functions_agent(llm, tools, prompt)
+    llm = ChatAnthropicTools(model_name = model_name)
+    agent = self._create_tools_agent(llm, tools, prompt)
     executor = AgentExecutor(
       agent = agent,
       tools = tools,
@@ -174,31 +204,17 @@ class AgentSupervisor(Chain):
 
     return executor
 
+
   def _create_supervisor(
     self,
-    llm: ChatAnthropicFunctions,
+    model_name: str,
     node_tools: List[NodeTool]) -> Runnable:
 
     members = [ node_tool.name for node_tool in node_tools ]
     options = [ FINISH ] + members
 
-    function_def = {
-        "name": "route",
-        "description": "Select the next role.",
-        "parameters": {
-            "title": "routeSchema",
-            "type": "object",
-            "properties": {
-                "next": {
-                    "title": "Next",
-                    "anyOf": [
-                        {"enum": options},
-                    ],
-                }
-            },
-            "required": ["next"],
-        },
-    }
+    route_tool = RouteTool(options = options)
+
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -207,10 +223,13 @@ class AgentSupervisor(Chain):
         ]
     ).partial(options=str(options), members=", ".join(members))
 
+    llm = ChatAnthropicTools(model_name = model_name)
+    llm.bind_tools([route_tool])
+
     supervisor_chain = (
       prompt
-      | llm.bind(functions=[function_def], function_call="route")
-      | JsonOutputFunctionsParser()
+      | llm
+      | ToolsOutputParser(args_only=True, first_tool_only=True)
     )
 
     return supervisor_chain
@@ -218,11 +237,11 @@ class AgentSupervisor(Chain):
 
   def init_workflow_nodes(self) -> StateGraph:
     """init workflow nodes"""
-    supervisor_chain = self._create_supervisor(self.llm, self.node_tools)
+    supervisor_chain = self._create_supervisor(self.model_name, self.node_tools)
 
     for node_tool in self.node_tools:
-      agent = self._create_tools_agent(
-        self.llm,
+      agent = self._create_tools_agent_executor(
+        self.model_name,
         [node_tool.tool],
         (
           f"{node_tool.description}"
@@ -245,6 +264,7 @@ class AgentSupervisor(Chain):
 
     return self.workflow
 
+
   def compile_graph(self) -> Pregel:
     """compile graph"""
     self.graph = self.workflow.compile()
@@ -261,47 +281,41 @@ class AgentSupervisor(Chain):
     self.workflow = StateGraph(AgentState)
     self.init_workflow_nodes()
     self.compile_graph()
-    config = RunnableConfig(recursion_limit = self.recursion_limit)
 
     result : Dict[str, Any] = {}
 
-    if self.verbosity:
-      for graph_stream in self.graph.stream(
-        {
-          "messages": [
-              HumanMessage(content=message)
-          ]
-        },
-        {"recursion_limit": self.recursion_limit},
-      ):
-        if "__end__" not in graph_stream:
-          logger.info(graph_stream)
-          logger.info("----")
-        result = graph_stream.get("__end__", {})
-    else:
-      result = self.graph.invoke(
-        input = {"messages": [HumanMessage(content=message)]},
-        config = config)
+    for graph_stream in self.graph.stream(
+      {
+        "messages": [
+            HumanMessage(content=message)
+        ]
+      },
+      {"recursion_limit": self.recursion_limit},
+    ):
+      if "__end__" not in graph_stream:
+        logger.info(graph_stream)
+        logger.info("----")
+      result = graph_stream.get("__end__", {})
 
     return {self.output_key: result}
 
 
   @classmethod
-  def from_llm_and_tools(
+  def from_node_tools(
     cls,
-    llm: ChatAnthropicFunctions,
     node_tools: Sequence[NodeTool],
     max_iterations: Optional[int] = 15,
+    model_name: Optional[str] = "claude-3-haiku-20240307",
     return_intermediate_steps: Optional[bool] = False,
     early_stopping_method: Optional[str] = "generate",
     recursion_limit: Optional[int] = 100,
     callbacks: Optional[Callbacks] = None,
     verbosity: Optional[bool] = False,
   ) -> "AgentSupervisor":
-    """Construct an AgentSupervisor from an LLM and tools."""
+    """Construct an AgentSupervisor from tools."""
 
     return cls(
-      llm = llm,
+      model_name = model_name,
       recursion_limit = recursion_limit,
       max_iterations = max_iterations,
       return_intermediate_steps = return_intermediate_steps,

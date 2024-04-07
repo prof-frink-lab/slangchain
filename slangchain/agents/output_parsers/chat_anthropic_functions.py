@@ -138,10 +138,21 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
       if partial:
         try:
           if self.args_only:
+            a = parse_partial_json(
+              function_call["arguments"], strict=self.strict
+            )
+            print(f"1. message: {a} | {str(type(a))}")
             return parse_partial_json(
               function_call["arguments"], strict=self.strict
             )
           else:
+            a = {
+              **function_call,
+              "arguments": parse_partial_json(
+                function_call["arguments"], strict=self.strict
+              ),
+            }
+            print(f"2. message: {a}")
             return {
               **function_call,
               "arguments": parse_partial_json(
@@ -153,6 +164,10 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
       else:
         if self.args_only:
           try:
+            a = json.loads(
+              function_call["arguments"], strict=self.strict
+            )
+            print(f"3. message: {a} | {str(type(a))}")
             return json.loads(
               function_call["arguments"], strict=self.strict
             )
@@ -162,6 +177,13 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
             )
         else:
           try:
+            a = {
+              **function_call,
+              "arguments": json.loads(
+                function_call["arguments"], strict=self.strict
+              ),
+            }
+            print(f"4. message: {a}")
             return {
               **function_call,
               "arguments": json.loads(
