@@ -140,6 +140,8 @@ class ChatAnthropicTools(BaseChatModel):
 
     previous_message = None
 
+    current_message = None
+
     for message in messages:
       if previous_message is None or isinstance(message, SystemMessage):
         formatted_messages.append(message)
