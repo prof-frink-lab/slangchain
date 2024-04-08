@@ -2,12 +2,11 @@
 from typing import Dict, Sequence, List, Optional, Any
 import logging
 import functools
-import json
 
 from langchain_core.runnables.base import RunnableSequence
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.callbacks import CallbackManagerForChainRun
 
@@ -22,8 +21,7 @@ from slangchain.graphs.anthropic.schemas import (
   CollaboratorAgentState as AgentState,
   CollaboratorNodeTool
 )
-from slangchain.llms.chat_anthropic_functions import ChatAnthropicFunctions
-from slangchain.tools.render import format_tool_to_anthropic_function
+from slangchain.llms.chat_anthropic_tools import ChatAnthropicTools
 
 TOOLS_PROMPT = (
   "You are a helpful AI assistant, collaborating with other assistants."
@@ -48,12 +46,18 @@ class AgentNode():
       agent: RunnableSequence,
       name: str) -> AgentState:
     """agent_node"""
+
+    result: BaseMessage = None
     result = agent.invoke(state)
     # We convert the agent output into a format that is suitable to append to the global state
 
     logger.debug("\n================ agent_node sender: %s ================", name)
     logger.debug("result: %s | %s", result.type, result)
-    if isinstance(result, AIMessage) and result.additional_kwargs:
+    tool_use_flag = False
+    if isinstance(result.content, list):
+      if result.content[-1].get("type") == "tool_use":
+        tool_use_flag = True
+    if isinstance(result, AIMessage) and tool_use_flag:
       pass
     else:
       result = HumanMessage(**result.dict(exclude={"type", "name"}), name=name)
@@ -79,22 +83,28 @@ class ToolNode():
 
   def tool_node(self, state: AgentState):
     """This runs tools in the graph
-
     It takes in an agent action and calls that tool and returns the result."""
+    tool_id = None
+    tool_name = None
+    tool_input = {}
+
     logger.debug("================ _tool_node sender: %s ================", state["sender"])
     messages = state["messages"]
     # Based on the continue condition
     # we know the last message involves a function call
     last_message = messages[-1]
     logger.debug("tool_node_last_message: %s | %s\n", last_message.type, last_message)
-    # We construct an ToolInvocation from the function_call
-    tool_input = json.loads(
-        last_message.additional_kwargs["function_call"]["arguments"]
-    )
-    # We can pass single-arg inputs by value
-    if len(tool_input) == 1 and "__arg1" in tool_input:
-      tool_input = next(iter(tool_input.values()))
-    tool_name = last_message.additional_kwargs["function_call"]["name"]
+    # We construct an ToolInvocation from the the tool_use message
+    if isinstance(last_message.content, list):
+      if last_message.content[-1].get("type") == "tool_use":
+        tool_input = last_message.content[-1].get("input")
+        tool_name = last_message.content[-1].get("name")
+        tool_id = last_message.content[-1].get("id")
+
+
+    if not tool_name:
+      return {"messages": []}
+
     action = ToolInvocation(
         tool=tool_name,
         tool_input=tool_input,
@@ -102,13 +112,13 @@ class ToolNode():
     # We call the tool_executor and get back a response
     response = self.tool_executor.invoke(action)
     # We use the response to create a FunctionMessage
-    function_message = AIMessage(
-        content=f"{tool_name} response: {str(response)}", name=action.tool
+    tool_message = ToolMessage(
+        content=f"{tool_name} response: {str(response)}", name=action.tool, tool_call_id = tool_id
     )
-    logger.debug("tool_node_function_message: %s | %s\n", function_message.type, function_message)
+    logger.debug("tool_node_function_message: %s | %s\n", tool_message.type, tool_message)
     logger.debug("================================")
     # We return a list, because this will get added to the existing list
-    return {"messages": [function_message]}
+    return {"messages": [tool_message]}
 
 
 class Router():
@@ -121,10 +131,11 @@ class Router():
     messages = state["messages"]
     last_message = messages[-1]
     logger.debug("router last_message: %s | %s", last_message.type, last_message)
-    if "function_call" in last_message.additional_kwargs:
+    if isinstance(last_message.content, list):
+      if last_message.content[-1].get("type") == "tool_use":
       # The previus agent is invoking a tool
-      logger.debug("router: CALL_TOOL")
-      return "call_tool"
+        logger.debug("router: CALL_TOOL")
+        return "call_tool"
     if "FINAL ANSWER" in last_message.content:
       # Any agent decided the work is done
       logger.debug("router: END")
@@ -135,7 +146,7 @@ class Router():
 
 class Collaborator(Chain):
   """Collaboration"""
-  llm: ChatAnthropicFunctions
+  model_name: str
   node_tools: List[CollaboratorNodeTool]
   workflow: Optional[StateGraph] = Field(default = None)
   graph: Optional[Pregel] = Field(default = None)
@@ -153,8 +164,8 @@ class Collaborator(Chain):
   @root_validator()
   def validate_class_objects(cls, values: Dict) -> Dict:
     """Validate that chains are all single input/output."""
-    if not isinstance(values["llm"], ChatAnthropicFunctions):
-      raise TypeError("llm must be of instance ChatAnthropicFunctions")
+    if "claude-3" not in values["model_name"]:
+      raise TypeError("model_name must start with claude-3")
     if not values["node_tools"]:
       return ValueError("tools list empty")
     if not all(isinstance(tool, CollaboratorNodeTool) for tool in values["node_tools"]):
@@ -182,13 +193,14 @@ class Collaborator(Chain):
 
   def _add_workflow_nodes(
     self,
-    llm: ChatAnthropicFunctions,
+    model_name: str,
     workflow: StateGraph,
     node_tools: List[CollaboratorNodeTool]) -> StateGraph:
     """add tools to workflow"""
 
     agent_node = AgentNode()
     for node_tool in node_tools:
+      llm = ChatAnthropicTools(model_name = model_name)
       tool_agent = self._create_tools_agent(
         llm = llm,
         tools = [node_tool.tool],
@@ -258,28 +270,28 @@ class Collaborator(Chain):
 
   def _create_tools_agent(
     self,
-    llm: ChatAnthropicFunctions,
+    llm: ChatAnthropicTools,
     tools: List[BaseTool],
     system_prompt: str
   ) -> RunnableSequence:
     """create tools agent"""
 
-    functions = [format_tool_to_anthropic_function(t) for t in tools]
-
     prompt = ChatPromptTemplate.from_messages([
       ("system", TOOLS_PROMPT,),
       MessagesPlaceholder(variable_name = "messages"),])
 
+    llm.bind_tools(tools)
+
     prompt = prompt.partial(system_message = system_prompt)
     prompt = prompt.partial(tool_names = ", ".join([tool.name for tool in tools]))
-    return prompt | llm.bind(functions = functions)
+    return prompt | llm
 
 
   def init_workflow_nodes(self) -> StateGraph:
     """init workflow nodes"""
     self.workflow = StateGraph(AgentState)
     self.workflow = self._add_workflow_nodes(
-      llm = self.llm,
+      model_name = self.model_name,
       workflow = self.workflow,
       node_tools = self.node_tools,
     )
@@ -292,6 +304,7 @@ class Collaborator(Chain):
       node_tools = self.node_tools,
     )
     return self.workflow
+
 
   def _call(
     self,
@@ -322,16 +335,16 @@ class Collaborator(Chain):
 
 
   @classmethod
-  def from_llm_and_node_tools(
+  def from_node_tools(
     cls,
-    llm: ChatAnthropicFunctions,
     node_tools: Sequence[CollaboratorNodeTool],
+    model_name: Optional[str] = "claude-3-haiku-20240307",
     recursion_limit: Optional[int] = 100,
   ) -> "Collaborator":
     """Construct a Collaborator from an LLM and tools."""
 
     return cls(
-      llm = llm,
+      model_name = model_name,
       recursion_limit = recursion_limit,
       node_tools = node_tools,
     )
