@@ -1,5 +1,5 @@
 """Collaboration class"""
-from typing import Dict, Sequence, List, Optional, Any
+from typing import Dict, Sequence, List, Optional, Callable, Any
 import logging
 import functools
 
@@ -19,7 +19,7 @@ from langgraph.prebuilt.tool_executor import ToolExecutor, ToolInvocation
 
 from slangchain.graphs.anthropic.schemas import (
   CollaboratorAgentState as AgentState,
-  CollaboratorNodeTool
+  CollaboratorToolsNode
 )
 from slangchain.llms.chat_anthropic_tools import ChatAnthropicTools
 
@@ -147,7 +147,7 @@ class Router():
 class Collaborator(Chain):
   """Collaboration"""
   model_name: str
-  node_tools: List[CollaboratorNodeTool]
+  tools_nodes: List[CollaboratorToolsNode]
   workflow: Optional[StateGraph] = Field(default = None)
   graph: Optional[Pregel] = Field(default = None)
   recursion_limit: Optional[int] = Field(default = 100)
@@ -166,10 +166,10 @@ class Collaborator(Chain):
     """Validate that chains are all single input/output."""
     if "claude-3" not in values["model_name"]:
       raise TypeError("model_name must start with claude-3")
-    if not values["node_tools"]:
+    if not values["tools_nodes"]:
       return ValueError("tools list empty")
-    if not all(isinstance(tool, CollaboratorNodeTool) for tool in values["node_tools"]):
-      raise TypeError("tools all must be of CollaboratorNodeTool type")
+    if not all(isinstance(tool, CollaboratorToolsNode) for tool in values["tools_nodes"]):
+      raise TypeError("tools all must be of CollaboratorToolsNode type")
     return values
 
 
@@ -191,33 +191,46 @@ class Collaborator(Chain):
     return [self.output_key]
 
 
+  def _create_tools_node(
+    self,
+    llm: ChatAnthropicTools,
+    agent_node: AgentNode,
+    tools_node: CollaboratorToolsNode) -> Callable:
+    """_create_tools_node"""
+    tool_agent = self._create_tools_agent(
+      llm = llm,
+      tools = tools_node.tools,
+      system_prompt = tools_node.prompt
+    )
+
+    tool_node = functools.partial(
+      agent_node.agent_node,
+      agent = tool_agent,
+      name = tools_node.name)
+
+    return tool_node
+
+
   def _add_workflow_nodes(
     self,
     model_name: str,
     workflow: StateGraph,
-    node_tools: List[CollaboratorNodeTool]) -> StateGraph:
+    tools_nodes: List[CollaboratorToolsNode]) -> StateGraph:
     """add tools to workflow"""
 
     agent_node = AgentNode()
-    for node_tool in node_tools:
+    for tools_node in tools_nodes:
       llm = ChatAnthropicTools(model_name = model_name)
-      tool_agent = self._create_tools_agent(
-        llm = llm,
-        tools = [node_tool.tool],
-        system_prompt = node_tool.description
+      workflow_node = self._create_tools_node(
+        llm, agent_node, tools_node
       )
+      workflow.add_node(tools_node.name, workflow_node)
 
-      tool_node = functools.partial(
-        agent_node.agent_node,
-        agent = tool_agent,
-        name = node_tool.name)
-      workflow.add_node(node_tool.name, tool_node)
-
-    tools = [node_tool.tool for node_tool in node_tools]
+    tools = [tool for tools_node in tools_nodes for tool in tools_node.tools]
     tool_executor = ToolExecutor(tools)
 
-    call_tool_node = ToolNode(tool_executor = tool_executor)
-    workflow.add_node(CALL_TOOL_NODE_NAME, call_tool_node.tool_node)
+    call_tools_node = ToolNode(tool_executor = tool_executor)
+    workflow.add_node(CALL_TOOL_NODE_NAME, call_tools_node.tool_node)
 
     return workflow
 
@@ -225,30 +238,30 @@ class Collaborator(Chain):
   def _add_workflow_edges(
     self,
     workflow: StateGraph,
-    node_tools: List[CollaboratorNodeTool]
+    tools_nodes: Sequence[CollaboratorToolsNode]
   ) -> StateGraph:
     """add workflow edges"""
-    node_tools_dict = {}
+    tools_nodes_dict = {}
     router = Router()
 
-    for node_tool in node_tools:
-      if not node_tool.conditional_edge_node:
+    for tools_node in tools_nodes:
+      if not tools_node.conditional_edge_node:
         continue
       workflow.add_conditional_edges(
-        node_tool.name,
+        tools_node.name,
         router.router,
         {
-          "continue": node_tool.conditional_edge_node,
+          "continue": tools_node.conditional_edge_node,
           CALL_TOOL_NODE_NAME: CALL_TOOL_NODE_NAME,
           "end": END
         }
       )
-      node_tools_dict[node_tool.name] = node_tool.name
+      tools_nodes_dict[tools_node.name] = tools_node.name
 
     workflow.add_conditional_edges(
       CALL_TOOL_NODE_NAME,
       lambda x: x["sender"],
-      node_tools_dict)
+      tools_nodes_dict)
 
     return workflow
 
@@ -256,13 +269,13 @@ class Collaborator(Chain):
   def _set_entry_point(
     self,
     workflow: StateGraph,
-    node_tools: List[CollaboratorNodeTool]
+    tools_nodes: List[CollaboratorToolsNode]
   ) -> StateGraph:
     """add workflow edges"""
-    entry_point = node_tools[0].name
-    for node_tool in node_tools:
-      if node_tool.entrypoint_flag:
-        entry_point = node_tool.name
+    entry_point = tools_nodes[0].name
+    for tools_node in tools_nodes:
+      if tools_node.entrypoint_flag:
+        entry_point = tools_node.name
         break
     workflow.set_entry_point(entry_point)
     return workflow
@@ -293,15 +306,15 @@ class Collaborator(Chain):
     self.workflow = self._add_workflow_nodes(
       model_name = self.model_name,
       workflow = self.workflow,
-      node_tools = self.node_tools,
+      tools_nodes = self.tools_nodes,
     )
     self.workflow = self._add_workflow_edges(
       workflow = self.workflow,
-      node_tools = self.node_tools,
+      tools_nodes = self.tools_nodes,
     )
     self.workflow = self._set_entry_point(
       workflow = self.workflow,
-      node_tools = self.node_tools,
+      tools_nodes = self.tools_nodes,
     )
     return self.workflow
 
@@ -335,9 +348,9 @@ class Collaborator(Chain):
 
 
   @classmethod
-  def from_node_tools(
+  def from_tools_nodes(
     cls,
-    node_tools: Sequence[CollaboratorNodeTool],
+    tools_nodes: Sequence[CollaboratorToolsNode],
     model_name: Optional[str] = "claude-3-haiku-20240307",
     recursion_limit: Optional[int] = 100,
   ) -> "Collaborator":
@@ -346,5 +359,5 @@ class Collaborator(Chain):
     return cls(
       model_name = model_name,
       recursion_limit = recursion_limit,
-      node_tools = node_tools,
+      tools_nodes = tools_nodes,
     )

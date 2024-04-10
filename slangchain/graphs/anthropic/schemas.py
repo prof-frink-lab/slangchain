@@ -1,7 +1,14 @@
 """Schemas"""
 from typing import (
-  Annotated, List, Sequence, TypedDict, Optional, Union
+  Annotated,
+  List,
+  Sequence,
+  TypedDict,
+  Optional,
+  Union,
+  Callable,
 )
+from typing_extensions import TypedDict
 import operator
 
 from playwright.async_api import Page
@@ -14,11 +21,11 @@ from langchain.tools.base import (
 from pydantic import BaseModel, Extra, Field
 
 
-class NodeTool(BaseModel):
-  """NodeTool"""
-  tool: BaseTool
+class ToolsNode(BaseModel):
+  """ToolsNode"""
   name: str
-  description: str
+  tools: Sequence[BaseTool]
+  prompt: str
 
   class Config:
     """BaseModel config"""
@@ -28,14 +35,14 @@ class NodeTool(BaseModel):
   @classmethod
   def from_objs(
     cls,
-    tool: Union[BaseTool, StructuredTool],
     name: str,
-    description: str):
+    tools: Sequence[Union[BaseTool, StructuredTool]],
+    prompt: str):
     """from_objs"""
     return cls(
-      tool = tool,
       name = name,
-      description = description
+      tools = tools,
+      prompt = prompt
     )
 
 
@@ -80,24 +87,75 @@ class CollaboratorAgentState(TypedDict):
   sender: str
 
 
-class CollaboratorNodeTool(NodeTool):
-  """CollaboratorNodeTool"""
+class CollaboratorToolsNode(ToolsNode):
+  """CollaboratorToolsNode"""
   entrypoint_flag: Optional[bool] = Field(default = False)
   conditional_edge_node: Optional[str] = Field(default = None)
 
   @classmethod
   def from_objs(
     cls,
-    tool: Union[BaseTool, StructuredTool],
+    tools: Sequence[Union[BaseTool, StructuredTool]],
     name: str,
-    description: str,
+    prompt: str,
     entrypoint_flag: Optional[bool] = False,
     conditional_edge_node: Optional[str] = None):
     """from_objs"""
     return cls(
-      tool = tool,
+      tools = tools,
       name = name,
-      description = description,
+      prompt = prompt,
       entrypoint_flag = entrypoint_flag,
       conditional_edge_node = conditional_edge_node
     )
+
+class AgentTeamToolsNode(ToolsNode):
+  """AgentTeamToolsNode"""
+  prelude: Optional[Callable] = Field(default = None)
+
+  class Config:
+    """BaseModel config"""
+    extra = Extra.forbid
+    arbitrary_types_allowed = True
+
+  @classmethod
+  def from_objs(
+    cls,
+    name: str,
+    tools: Sequence[Union[BaseTool, StructuredTool]],
+    prompt: str,
+    prelude: Optional[Callable] = None):
+    """from_objs"""
+    return cls(
+      tools = tools,
+      name = name,
+      prompt = prompt,
+      prelude = prelude
+    )
+
+
+class AgentTeam(BaseModel):
+  """Hierarchical Agent Team"""
+  name: str
+  agent_state: type
+  tools_nodes: Sequence[AgentTeamToolsNode]
+
+  @classmethod
+  def from_objs(
+    cls,
+    name: str,
+    agent_state: type,
+    tools_nodes: Sequence[AgentTeamToolsNode],
+  ):
+    """from_objs"""
+    return cls(
+      name = name,
+      agent_state = agent_state,
+      tools_nodes = tools_nodes,
+    )
+
+
+class HierarchicalAgentState(TypedDict):
+  """"Hierarchical Agent State"""
+  messages: Annotated[List[BaseMessage], operator.add]
+  next: str

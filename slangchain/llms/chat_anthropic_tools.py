@@ -72,13 +72,8 @@ class ChatAnthropicTools(BaseChatModel):
     **kwargs: Any,
   ) -> ChatResult:
 
-    logger.debug(
-      "messages: \n %s\n\n", messages)
-
     messages = self._format_messages(messages)
 
-    logger.debug(
-      "formatted messages: \n %s", messages)
     response = None
     try:
 
@@ -88,7 +83,6 @@ class ChatAnthropicTools(BaseChatModel):
         config=RunnableConfig(callbacks=run_manager),
         **kwargs)
 
-      logger.debug("response: %s\n", json.dumps(response.dict(), indent=2))
 
       if isinstance(response.content, str):
         response.content = cast(str, response.content).strip()
@@ -113,8 +107,6 @@ class ChatAnthropicTools(BaseChatModel):
         content= (
           f"Exception - Type: {ex_type}, Exception: {ex_value},"
           f" Traceback: {ex_traceback}, File: {filename}, Line: {line_number}"))
-
-    logger.debug("response message: %s | %s\n", message.type, message)
 
     return ChatResult(generations=[ChatGeneration(message=message)])
 

@@ -31,7 +31,7 @@ from slangchain.agents.format_scratchpad.chat_anthropic_functions import (
     format_to_anthropic_function_messages,
 )
 from slangchain.graphs.anthropic.schemas import (
-  NodeTool,
+  ToolsNode,
   AgentSupervisorAgentState as AgentState
 )
 from slangchain.agents.output_parsers.chat_anthropic_tools import (
@@ -102,7 +102,7 @@ class AgentSupervisor(Chain):
   callbacks: Optional[Callbacks] = Field(default = None)
   verbosity: Optional[bool] = Field(default = False)
 
-  node_tools: Optional[List[NodeTool]]
+  tools_nodes: Optional[Sequence[ToolsNode]]
   workflow: Optional[StateGraph] = Field(default = None)
   graph: Optional[Pregel] = Field(default = None)
 
@@ -120,10 +120,10 @@ class AgentSupervisor(Chain):
     """Validate that chains are all single input/output."""
     if "claude-3" not in values["model_name"]:
       raise TypeError("model_name must start with claude-3")
-    if not values["node_tools"]:
-      return ValueError("node_tools list empty")
-    if not all(isinstance(node_tool, NodeTool) for node_tool in values["node_tools"]):
-      raise TypeError("tools all must be of BaseTool type")
+    if not values["tools_nodes"]:
+      return ValueError("tools_nodes list empty")
+    if not all(isinstance(node_tool, ToolsNode) for node_tool in values["tools_nodes"]):
+      raise TypeError("tools_nodes all must be of ToolsNode type")
     return values
 
   @property
@@ -174,7 +174,7 @@ class AgentSupervisor(Chain):
   def _create_tools_agent_executor(
     self,
     model_name: str,
-    tools: list,
+    tools: List[BaseTool],
     system_prompt: str
   ) -> AgentExecutor:
     # Each worker node will be given a name and some tools.
@@ -208,9 +208,9 @@ class AgentSupervisor(Chain):
   def _create_supervisor(
     self,
     model_name: str,
-    node_tools: List[NodeTool]) -> Runnable:
+    tools_nodes: Sequence[ToolsNode]) -> Runnable:
 
-    members = [ node_tool.name for node_tool in node_tools ]
+    members = [ tools_node.name for tools_node in tools_nodes ]
     options = [ FINISH ] + members
 
     route_tool = RouteTool(options = options)
@@ -237,25 +237,25 @@ class AgentSupervisor(Chain):
 
   def init_workflow_nodes(self) -> StateGraph:
     """init workflow nodes"""
-    supervisor_chain = self._create_supervisor(self.model_name, self.node_tools)
+    supervisor_chain = self._create_supervisor(self.model_name, self.tools_nodes)
 
-    for node_tool in self.node_tools:
+    for tools_node in self.tools_nodes:
       agent = self._create_tools_agent_executor(
         self.model_name,
-        [node_tool.tool],
+        tools_node.tools,
         (
-          f"{node_tool.description}"
+          f"{tools_node.prompt}"
           " Be very economical and use the minimum number of tool iterations to achieve your task.")
       )
-      node = functools.partial(agent_node, agent = agent, name = node_tool.name)
-      self.workflow.add_node(node_tool.name, node)
+      node = functools.partial(agent_node, agent = agent, name = tools_node.name)
+      self.workflow.add_node(tools_node.name, node)
 
     self.workflow.add_node(SUPERVISOR, supervisor_chain)
 
-    for node_tool in self.node_tools:
-      self.workflow.add_edge(node_tool.name, SUPERVISOR)
+    for tools_node in self.tools_nodes:
+      self.workflow.add_edge(tools_node.name, SUPERVISOR)
 
-    conditional_map = { node_tool.name: node_tool.name for node_tool in self.node_tools }
+    conditional_map = { node_tool.name: node_tool.name for node_tool in self.tools_nodes }
     conditional_map[FINISH] = END
 
     self.workflow.add_conditional_edges(SUPERVISOR, lambda x: x[NEXT], conditional_map)
@@ -301,9 +301,9 @@ class AgentSupervisor(Chain):
 
 
   @classmethod
-  def from_node_tools(
+  def from_tools_node(
     cls,
-    node_tools: Sequence[NodeTool],
+    tools_nodes: Sequence[ToolsNode],
     max_iterations: Optional[int] = 15,
     model_name: Optional[str] = "claude-3-haiku-20240307",
     return_intermediate_steps: Optional[bool] = False,
@@ -320,7 +320,7 @@ class AgentSupervisor(Chain):
       max_iterations = max_iterations,
       return_intermediate_steps = return_intermediate_steps,
       early_stopping_method = early_stopping_method,
-      node_tools = node_tools,
+      tools_nodes = tools_nodes,
       callbacks = callbacks,
       verbosity = verbosity,
     )

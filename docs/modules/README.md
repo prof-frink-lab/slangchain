@@ -143,3 +143,18 @@ A single agent can usually operate effectively using a handful of tools within a
 One way to approach complicated tasks is through a "divide-and-conquer" approach: create an specialized agent for each task or domain and route tasks to the correct "expert".
 
 This notebook (inspired by the paper [AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation](https://arxiv.org/abs/2308.08155), by Wu, et. al.) shows one way to do this using LangGraph.
+
+<br>
+
+### Hierarchical Agent Teams
+
+For this [notebook](graphs/examples/anthropic/hierarchical_agent_teams.ipynb), we encapsulate the functionality for [LangChain's Hierarchical Agent Teams](https://github.com/langchain-ai/langgraph/blob/main/examples/multi_agent/hierarchical_agent_teams.ipynb) in a [HierarchicalAgentTeams](../../slangchain/graphs/anthropic/multi_agent/hierarchical_agent_teams.py) class to orchestrate a list of [AgentTeam](../../slangchain/graphs/anthropic/schemas.py).
+
+
+In our previous example ([Agent Supervisor](./agent_supervisor.ipynb)), we introduced the concept of a single supervisor node to route work between different worker nodes.
+
+But what if the job for a single worker becomes too complex? What if the number of workers becomes too large?
+
+For some applications, the system may be more effective if work is distributed _hierarchically_.
+
+You can do this by composing different subgraphs and creating a top-level supervisor, along with mid-level supervisors.
