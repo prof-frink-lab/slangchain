@@ -82,7 +82,6 @@ class HierarchicalAgentTeams(Chain):
   callbacks: Optional[Callbacks] = Field(default = None)
   verbosity: Optional[bool] = Field(default = False)
   workflow: Optional[StateGraph] = Field(default = None)
-  graph: Optional[Pregel] = Field(default = None)
 
   input_key: str = "input"  #: :meta private:
   output_key: str = "output"  #: :meta private:
@@ -373,11 +372,11 @@ class HierarchicalAgentTeams(Chain):
     message = inputs[self.input_key]
 
     self.workflow = self.init_workflow_nodes()
-    self.graph = self.workflow.compile()
+    graph = self.workflow.compile()
 
     result : Dict[str, Any] = {}
 
-    for graph_stream in self.graph.stream(
+    for graph_stream in graph.stream(
       {
         "messages": [
             HumanMessage(content=message)

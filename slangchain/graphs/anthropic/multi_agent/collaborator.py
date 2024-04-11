@@ -149,7 +149,6 @@ class Collaborator(Chain):
   model_name: str
   tools_nodes: List[CollaboratorToolsNode]
   workflow: Optional[StateGraph] = Field(default = None)
-  graph: Optional[Pregel] = Field(default = None)
   recursion_limit: Optional[int] = Field(default = 100)
 
   input_key: str = "input"  #: :meta private:
@@ -327,11 +326,11 @@ class Collaborator(Chain):
     message = inputs[self.input_key]
 
     self.workflow = self.init_workflow_nodes()
-    self.graph = self.workflow.compile()
+    graph = self.workflow.compile()
 
     result : Dict[str, Any] = {}
 
-    for graph_stream in self.graph.stream(
+    for graph_stream in graph.stream(
       {
         "messages": [
             HumanMessage(content=message)

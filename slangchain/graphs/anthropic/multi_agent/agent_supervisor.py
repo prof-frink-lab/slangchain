@@ -104,7 +104,6 @@ class AgentSupervisor(Chain):
 
   tools_nodes: Optional[Sequence[ToolsNode]]
   workflow: Optional[StateGraph] = Field(default = None)
-  graph: Optional[Pregel] = Field(default = None)
 
   input_key: str = "input"  #: :meta private:
   output_key: str = "output"  #: :meta private:
@@ -267,8 +266,8 @@ class AgentSupervisor(Chain):
 
   def compile_graph(self) -> Pregel:
     """compile graph"""
-    self.graph = self.workflow.compile()
-    return self.graph
+    graph = self.workflow.compile()
+    return graph
 
 
   def _call(
@@ -280,11 +279,11 @@ class AgentSupervisor(Chain):
     message = inputs[self.input_key]
     self.workflow = StateGraph(AgentState)
     self.init_workflow_nodes()
-    self.compile_graph()
+    graph = self.compile_graph()
 
     result : Dict[str, Any] = {}
 
-    for graph_stream in self.graph.stream(
+    for graph_stream in graph.stream(
       {
         "messages": [
             HumanMessage(content=message)
