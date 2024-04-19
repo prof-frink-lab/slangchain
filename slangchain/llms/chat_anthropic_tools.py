@@ -72,6 +72,7 @@ class ChatAnthropicTools(BaseChatModel):
     **kwargs: Any,
   ) -> ChatResult:
 
+
     messages = self._format_messages(messages)
 
     response = None
@@ -82,7 +83,6 @@ class ChatAnthropicTools(BaseChatModel):
         stop = stop,
         config=RunnableConfig(callbacks=run_manager),
         **kwargs)
-
 
       if isinstance(response.content, str):
         response.content = cast(str, response.content).strip()

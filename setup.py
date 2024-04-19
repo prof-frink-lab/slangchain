@@ -50,6 +50,9 @@ setuptools.setup(
     'gptcache',
     'pinecone-client',
 
+    'kay',
+    'yfinance',
+
     'jupyter',
     'pydantic==1.10.9',
     'langchain==0.1.16',

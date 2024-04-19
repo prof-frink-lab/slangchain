@@ -1,4 +1,5 @@
 """Schemas"""
+import operator
 from typing import (
   Annotated,
   List,
@@ -8,16 +9,13 @@ from typing import (
   Union,
   Callable,
 )
-from typing_extensions import TypedDict
-import operator
 
 from playwright.async_api import Page
 
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, HumanMessage
 from langchain.tools.base import (
   BaseTool, StructuredTool
 )
-
 from pydantic import BaseModel, Extra, Field
 
 
@@ -159,3 +157,35 @@ class HierarchicalAgentState(TypedDict):
   """"Hierarchical Agent State"""
   messages: Annotated[List[BaseMessage], operator.add]
   next: str
+
+
+class Reflection(BaseModel):
+  """Reflection"""
+
+  reflections: str = Field(
+    description="The critique and reflections on the sufficiency, superfluency,"
+    " and general quality of the response"
+  )
+
+  score: int = Field(
+    description="Score from 0-10 on the quality of the candidate response.",
+    gte=0,
+    lte=10,
+  )
+
+  found_solution: bool = Field(
+    description="Whether the response has fully solved the question or task."
+  )
+
+
+  def as_message(self):
+    """as message"""
+    return HumanMessage(
+      content=f"Reasoning: {self.reflections}\nScore: {self.score}"
+    )
+
+
+  @property
+  def normalized_score(self) -> float:
+    """normalized score"""
+    return self.score / 10.0
