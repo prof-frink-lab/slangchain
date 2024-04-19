@@ -159,6 +159,8 @@ For some applications, the system may be more effective if work is distributed _
 
 You can do this by composing different subgraphs and creating a top-level supervisor, along with mid-level supervisors.
 
+<br>
+
 ### Language Agent Tree Search
 
 This [notebook](graphs/examples/anthropic/lats.ipynb) is an example [LATS](../../slangchain/graphs/anthropic/lats/lats.py) implementation of a [LangChain](https://github.com/hwchase17/langchain) [Lateral Agents Tree Search](https://github.com/langchain-ai/langgraph/blob/main/examples/lats/lats.ipynb) powered by [Anthropic's Claude](https://www.anthropic.com/news/claude-3-family).
