@@ -158,3 +158,9 @@ But what if the job for a single worker becomes too complex? What if the number 
 For some applications, the system may be more effective if work is distributed _hierarchically_.
 
 You can do this by composing different subgraphs and creating a top-level supervisor, along with mid-level supervisors.
+
+### Language Agent Tree Search
+
+This [notebook](graphs/examples/anthropic/lats.ipynb) is an example [LATS](../../slangchain/graphs/anthropic/lats/lats.py) implementation of a [LangChain](https://github.com/hwchase17/langchain) [Lateral Agents Tree Search](https://github.com/langchain-ai/langgraph/blob/main/examples/lats/lats.ipynb) powered by [Anthropic's Claude](https://www.anthropic.com/news/claude-3-family).
+
+[Language Agent Tree Search](https://arxiv.org/abs/2310.04406) (LATS), by Zhou, et. al, is a general LLM agent search algorithm that combines reflection/evaluation and search (specifically monte-carlo trees search) to get achieve better overall task performance compared to similar techniques like ReACT, Reflexion, or Tree of Thoughts.
