@@ -142,7 +142,6 @@ class WebVoyager(Chain):
   headless_flag: Optional[bool] = Field(default = False)
   agent: Optional[Runnable] = Field(default = None)
   workflow: Optional[StateGraph] = Field(default = None)
-  graph: Optional[Pregel] = Field(default = None)
   input_key: str = "input"  #: :meta private:
   output_key: str = "output"  #: :meta private:
 
@@ -211,7 +210,7 @@ class WebVoyager(Chain):
 
     question = inputs[self.input_key]
     self.init_workflow_nodes()
-    self.compile_graph()
+    graph = self.compile_graph()
 
     result : Dict[str, Any] = {}
 
@@ -224,7 +223,7 @@ class WebVoyager(Chain):
     _ = await page.goto("https://www.google.com")
 
     steps = []
-    event_stream = self.graph.astream(
+    event_stream = graph.astream(
       {
         "page": page,
         "input": f"\n {question}",
@@ -282,8 +281,8 @@ class WebVoyager(Chain):
 
   def compile_graph(self) -> Pregel:
     """compile graph"""
-    self.graph = self.workflow.compile()
-    return self.graph
+    graph = self.workflow.compile()
+    return graph
 
 
   def _select_tool(self, state: AgentState):
